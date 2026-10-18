@@ -17,7 +17,7 @@
 
 ## What it does
 
-ArgonWeather is built on the [Argon](https://github.com/niko-tar-gz/Argon) in-game menu and adds a **Customisation** page to it. Everything is done with your VR controllers: no extra window, no keyboard.
+ArgonWeather adds a **Customisation** page to the [Argon](https://github.com/niko-tar-gz/Argon) in-game menu. Everything is done with your VR controllers: no extra window, no keyboard.
 
 | Option | Choices |
 |---|---|
@@ -26,16 +26,6 @@ ArgonWeather is built on the [Argon](https://github.com/niko-tar-gz/Argon) in-ga
 
 - The time you pick is **pinned**: it stays applied even when the server resyncs the room. Choose *Normal* to give control back to the game.
 - Everything is **local**: only you see the change. No network call, and you do not need to be the host.
-
-## ⚠️ Not compatible with the original Argon
-
-ArgonWeather is **a different version of Argon**, made only for the weather and time features. It is **not** a plugin for the original Argon, and it is **not meant to be used together with it**.
-
-- **Do not install it next to the original Argon.** Use one or the other.
-- It only contains the menu and the *Customisation* page. The extra features of the original Argon, such as its *Extensions* page (player list, lobby hop, reports, room history), are **not included**.
-- The original `ArgonExtensions` plugin will not work with it.
-
-If you want the original Argon and its features, get it from the [official Argon repository](https://github.com/niko-tar-gz/Argon).
 
 ## Controls
 
@@ -51,10 +41,9 @@ The navigation input can be changed in the menu under **Settings > Menu Nav** (r
 ## Install
 
 1. Install **[BepInEx](https://github.com/BepInEx/BepInEx/releases) 5.x** in Gorilla Tag.
-2. If you have the original Argon (or `ArgonExtensions`) in `BepInEx/plugins/`, **remove it**.
-3. Download `ArgonWeather-1.0.dll` from the [Releases](../../releases) page.
-4. Drop it into `Gorilla Tag/BepInEx/plugins/`.
-5. Launch the game, press **B**, and open **Customisation**.
+2. Download `ArgonWeather-1.0.dll` from the [Releases](../../releases) page.
+3. Drop it into `Gorilla Tag/BepInEx/plugins/`.
+4. Launch the game, press **B**, and open **Customisation**.
 
 No other dependency is needed. The mod is a single, self-contained DLL.
 
