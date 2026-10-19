@@ -8,6 +8,7 @@
 ![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-green)
 
 </div>
+<img width="919" height="579" alt="ArgonWeatherMenu" src="https://github.com/user-attachments/assets/69912a25-2b4c-46f7-b66f-ce4a50a2bb1d" />
 
 <!-- Add a screenshot or GIF of the menu in game here, for example:
 ![ArgonWeather menu](docs/screenshot.png)
