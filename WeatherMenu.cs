@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ArgonWeather
 {
     /// <summary>"Customisation" page of the Argon menu: pinned time of day + rain (native game API).
-    /// Locked outside modded lobbies (see Plugin.cs / Utilla).</summary>
+    /// Locked in public lobbies; unlocked in modded lobbies and private rooms.</summary>
     internal sealed class WeatherMenu : MonoBehaviour
     {
         internal const string RootLabel = "Customisation";
@@ -17,20 +17,52 @@ namespace ArgonWeather
 
         internal static WeatherMenu Instance { get; private set; }
 
-        // false by default: nothing is applied until the player is in a modded lobby.
+        // Locked by default. Unlocked in a modded lobby or a private room.
         private static bool allowed;
+        private static bool inModdedLobby;
+        private static bool inPrivateRoom;
 
         private ConfigEntry<int> hourConfig;
         private ConfigEntry<bool> rainConfig;
         private int hourIndex = -1;
         private bool rain;
         private BetterDayNightManager pinned;
+        private float nextRoomCheck;
 
         /// <summary>Called by Plugin.cs (Utilla) when entering / leaving a modded lobby.</summary>
-        internal static void SetAllowed(bool value)
+        internal static void SetModded(bool value)
         {
+            inModdedLobby = value;
+            if (Instance != null) Instance.Recompute();
+            else allowed = inModdedLobby || inPrivateRoom;
+        }
+
+        private void Update()
+        {
+            // Private room: checked once per second, cheap enough.
+            if (Time.time < nextRoomCheck) return;
+            nextRoomCheck = Time.time + 1f;
+            bool isPrivate;
+            try
+            {
+                var network = NetworkSystem.Instance;
+                isPrivate = network != null && network.InRoom && network.SessionIsPrivate;
+            }
+            catch (Exception)
+            {
+                isPrivate = false;
+            }
+            if (isPrivate == inPrivateRoom) return;
+            inPrivateRoom = isPrivate;
+            Recompute();
+        }
+
+        private void Recompute()
+        {
+            bool value = inModdedLobby || inPrivateRoom;
+            if (value == allowed) return;
             allowed = value;
-            if (Instance != null) Instance.OnAllowedChanged();
+            OnAllowedChanged();
         }
 
         internal void Initialize(ConfigFile config)
@@ -65,8 +97,8 @@ namespace ArgonWeather
             {
                 return new MenuPage(RootLabel, new[]
                 {
-                    new MenuItem("Locked: modded lobbies only", (Action)null, false, true),
-                    new MenuItem("Join a modded lobby to use it", (Action)null, false, true),
+                    new MenuItem("Locked: modded or private rooms only", (Action)null, false, true),
+                    new MenuItem("Join a modded lobby or a private room", (Action)null, false, true),
                 });
             }
 

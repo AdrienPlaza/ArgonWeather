@@ -15,10 +15,10 @@ namespace Argon
         }
 
         [ModdedGamemodeJoin]
-        public void OnModdedJoin(string gamemode) => ArgonWeather.WeatherMenu.SetAllowed(true);
+        public void OnModdedJoin(string gamemode) => ArgonWeather.WeatherMenu.SetModded(true);
 
         [ModdedGamemodeLeave]
-        public void OnModdedLeave(string gamemode) => ArgonWeather.WeatherMenu.SetAllowed(false);
+        public void OnModdedLeave(string gamemode) => ArgonWeather.WeatherMenu.SetModded(false);
 
         private void OnDestroy() => MenuApi.Reset();
     }
