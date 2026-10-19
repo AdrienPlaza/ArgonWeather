@@ -152,7 +152,7 @@ namespace Argon
             {
                 new MenuItem("Settings", CreateSettingsPage)
             };
-            return new MenuPage("Argon v" + PluginInfo.Version, items);
+            return new MenuPage(PluginInfo.Name + " v" + PluginInfo.Version, items);
         }
 
         private MenuPage CreateSettingsPage() => new MenuPage("Settings", new[]
