@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace ArgonWeather
 {
-    /// <summary>"Customisation" page of the Argon menu: pinned time of day + rain (native game API).</summary>
+    /// <summary>"Customisation" page of the Argon menu: pinned time of day + rain (native game API).
+    /// Locked outside modded lobbies (see Plugin.cs / Utilla).</summary>
     internal sealed class WeatherMenu : MonoBehaviour
     {
         internal const string RootLabel = "Customisation";
@@ -14,11 +15,23 @@ namespace ArgonWeather
         private static readonly int[] PresetIndex = { 1, 3, 4, 6, 0 };
         private static readonly string[] PresetName = { "Morning", "10 AM", "Day", "Evening", "Night" };
 
+        internal static WeatherMenu Instance { get; private set; }
+
+        // false by default: nothing is applied until the player is in a modded lobby.
+        private static bool allowed;
+
         private ConfigEntry<int> hourConfig;
         private ConfigEntry<bool> rainConfig;
         private int hourIndex = -1;
         private bool rain;
         private BetterDayNightManager pinned;
+
+        /// <summary>Called by Plugin.cs (Utilla) when entering / leaving a modded lobby.</summary>
+        internal static void SetAllowed(bool value)
+        {
+            allowed = value;
+            if (Instance != null) Instance.OnAllowedChanged();
+        }
 
         internal void Initialize(ConfigFile config)
         {
@@ -29,10 +42,34 @@ namespace ArgonWeather
             MenuApi.RegisterRootItem(RootLabel, CreateRootPage);
         }
 
-        private void Awake() => DontDestroyOnLoad(gameObject);
+        private void Awake()
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
+        private void OnAllowedChanged()
+        {
+            if (allowed) Reapply();
+            else ResetToGame();
+        }
 
         private MenuPage CreateRootPage()
         {
+            if (!allowed)
+            {
+                return new MenuPage(RootLabel, new[]
+                {
+                    new MenuItem("Locked: modded lobbies only", (Action)null, false, true),
+                    new MenuItem("Join a modded lobby to use it", (Action)null, false, true),
+                });
+            }
+
             Reapply();
             return new MenuPage(RootLabel, new[]
             {
@@ -96,6 +133,7 @@ namespace ArgonWeather
 
         private void Shift(int delta)
         {
+            if (!allowed) return;
             var manager = BetterDayNightManager.instance;
             if (manager == null) return;
             double[] range = manager.timeOfDayRange;
@@ -107,6 +145,7 @@ namespace ArgonWeather
 
         private void ApplyTime()
         {
+            if (!allowed) return;
             try
             {
                 var manager = BetterDayNightManager.instance;
@@ -137,6 +176,7 @@ namespace ArgonWeather
 
         private void Reapply()
         {
+            if (!allowed) return;
             try
             {
                 var manager = BetterDayNightManager.instance;
@@ -154,6 +194,7 @@ namespace ArgonWeather
 
         private void ToggleRain()
         {
+            if (!allowed) return;
             rain = !rain;
             rainConfig.Value = rain;
             ApplyRain();
@@ -161,6 +202,7 @@ namespace ArgonWeather
 
         private void ApplyRain()
         {
+            if (!allowed) return;
             try
             {
                 var manager = BetterDayNightManager.instance;
@@ -174,12 +216,9 @@ namespace ArgonWeather
             }
         }
 
-        private void ResetAll()
+        /// <summary>Gives time and weather back to the game, without clearing the player's choices.</summary>
+        private void ResetToGame()
         {
-            hourIndex = -1;
-            rain = false;
-            hourConfig.Value = -1;
-            rainConfig.Value = false;
             try
             {
                 var manager = BetterDayNightManager.instance;
@@ -193,6 +232,16 @@ namespace ArgonWeather
             {
                 Debug.LogException(e, this);
             }
+        }
+
+        private void ResetAll()
+        {
+            if (!allowed) return;
+            hourIndex = -1;
+            rain = false;
+            hourConfig.Value = -1;
+            rainConfig.Value = false;
+            ResetToGame();
         }
     }
 }

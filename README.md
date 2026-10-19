@@ -22,6 +22,8 @@
 
 ArgonWeather adds a **Customisation** page to the [Argon](https://github.com/niko-tar-gz/Argon) in-game menu. Everything is done with your VR controllers, or with the keyboard on PC (T to open).
 
+The page only works in **modded lobbies** (it needs [Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/)). In a normal public lobby it shows *Locked: modded lobbies only* and changes nothing. Leaving a modded lobby gives the time and the weather back to the game.
+
 | Option | Choices |
 |---|---|
 | **Time of day** | Normal (game), Morning, 10 AM, Day, Evening, Night, −1 / +1 hour |
@@ -29,7 +31,7 @@ ArgonWeather adds a **Customisation** page to the [Argon](https://github.com/nik
 
 - The time you pick is **pinned**: it stays applied even when the server resyncs the room. Choose *Normal* to give control back to the game.
 - Your choice is **saved between sessions** (BepInEx config file).
-- **Tout remettre normal** resets time and rain in one click (your menu settings are untouched).
+- **Reset everything** resets time and rain in one click (your menu settings are untouched).
 - Everything is **local**: only you see the change. No network call, and you do not need to be the host.
 
 ## Controls
@@ -49,11 +51,12 @@ The navigation input can be changed in the menu under **Settings > Menu Nav** (r
 ## Install
 
 1. Install **[BepInEx](https://github.com/BepInEx/BepInEx/releases) 5.x** in Gorilla Tag.
-2. Download `ArgonWeather.dll` from the [Releases](../../releases) page.
-3. Drop it into `Gorilla Tag/BepInEx/plugins/`.
-4. Launch the game, press **B**, and open **Customisation**.
+2. Install **[Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/)** (required, it locks the mod to modded lobbies).
+3. Download `ArgonWeather.dll` from the [Releases](../../releases) page.
+4. Drop it into `Gorilla Tag/BepInEx/plugins/`.
+5. Launch the game, press **B**, and open **Customisation** in a modded lobby.
 
-No other dependency is needed. The mod is a single, self-contained DLL.
+The mod is a single, self-contained DLL: it does not require the original Argon plugin.
 
 ## Build from source
 
@@ -86,6 +89,7 @@ The time and the rain go through the game's own `BetterDayNightManager`:
 - A time preset calls `SetTimeOfDay(index)` and pins it with `SetTimeIndexOverrideFunction(...)`, which is why it survives server updates. *Normal* calls `UnsetTimeIndexOverrideFunction()` and `ClearTimeOfDay(true)`.
 - The pin is re-applied when the menu opens if the game reset it (map change), so it never silently stops working.
 - Rain uses `SetFixedWeather(WeatherType.Raining, true)` and `ClearFixedWeather(true)`.
+- [Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/) tells the mod when you enter or leave a modded lobby (`ModdedGamemodeJoin` / `ModdedGamemodeLeave`). Outside, the mod stays locked and never touches the game's time or weather.
 
 ## Known issues
 

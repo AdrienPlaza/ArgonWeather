@@ -1,8 +1,11 @@
 using BepInEx;
+using Utilla.Attributes;
 
 namespace Argon
 {
     [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
+    [BepInDependency("org.legoandmars.gorillatag.utilla")]
+    [ModdedGamemode]
     public class Plugin : BaseUnityPlugin
     {
         public void Awake()
@@ -11,6 +14,12 @@ namespace Argon
             gameObject.AddComponent<ArgonWeather.WeatherMenu>().Initialize(Config);
         }
 
+        [ModdedGamemodeJoin]
+        public void OnModdedJoin(string gamemode) => ArgonWeather.WeatherMenu.SetAllowed(true);
+
+        [ModdedGamemodeLeave]
+        public void OnModdedLeave(string gamemode) => ArgonWeather.WeatherMenu.SetAllowed(false);
+
         private void OnDestroy() => MenuApi.Reset();
     }
 
@@ -18,6 +27,6 @@ namespace Argon
     {
         public const string GUID = "majorol.argon.weather";
         public const string Name = "ArgonWeather";
-        public const string Version = "1.1.0";
+        public const string Version = "1.2.0";
     }
 }

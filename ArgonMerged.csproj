@@ -24,6 +24,9 @@
     <Reference Include="BepInEx.Harmony">
       <HintPath>$(BepInExAssemblyPath)\BepInEx.Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="Utilla">
+      <HintPath>$(PluginsPath)\Utilla.dll</HintPath>
+    </Reference>
     <Reference Include="Cinemachine">
       <HintPath>$(GameAssemblyPath)\Cinemachine.dll</HintPath>
     </Reference>
