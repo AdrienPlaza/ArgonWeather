@@ -17,6 +17,8 @@ namespace ArgonWeather
 
         internal static WeatherMenu Instance { get; private set; }
 
+        internal static bool IsAllowed => allowed;
+
         // Locked by default. Unlocked in a modded lobby or a private room.
         private static bool allowed;
         private static bool inModdedLobby;

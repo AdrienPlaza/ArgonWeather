@@ -50,6 +50,13 @@ namespace Argon
             if (poller == null && keyboard == null) return;
             try
             {
+                if (!ArgonWeather.WeatherMenu.IsAllowed)
+                {
+                    // Public lobby: the mod is fully disabled (no menu, no input).
+                    previousOpen = poller != null && poller.rightControllerSecondaryButton;
+                    if (menuObject != null && menuObject.activeSelf) menuObject.SetActive(false);
+                    return;
+                }
                 bool openPressed = poller != null && poller.rightControllerSecondaryButton;
                 bool togglePressed = openPressed || (keyboard != null && keyboard.tKey.wasPressedThisFrame);
                 if (togglePressed && !previousOpen) Toggle();
