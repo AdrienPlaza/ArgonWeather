@@ -5,14 +5,14 @@ using UnityEngine;
 
 namespace ArgonWeather
 {
-    /// <summary>Page "Customisation" du menu Argon : heure epinglee + pluie (API native du jeu).</summary>
+    /// <summary>"Customisation" page of the Argon menu: pinned time of day + rain (native game API).</summary>
     internal sealed class WeatherMenu : MonoBehaviour
     {
         internal const string RootLabel = "Customisation";
 
-        // Index des presets, identiques a ceux de Time Changer (Gorilla.Time V2.1).
+        // Preset indices, identical to the ones used by Time Changer (Gorilla.Time V2.1).
         private static readonly int[] PresetIndex = { 1, 3, 4, 6, 0 };
-        private static readonly string[] PresetName = { "Matin", "10h", "Jour", "Soir", "Nuit" };
+        private static readonly string[] PresetName = { "Morning", "10 AM", "Day", "Evening", "Night" };
 
         private ConfigEntry<int> hourConfig;
         private ConfigEntry<bool> rainConfig;
@@ -36,9 +36,9 @@ namespace ArgonWeather
             Reapply();
             return new MenuPage(RootLabel, new[]
             {
-                new MenuItem("Heure : " + HourLabel(hourIndex), CreateTimePage),
-                new MenuItem("Pluie : " + (rain ? "ON" : "OFF"), ToggleRain),
-                new MenuItem("Tout remettre normal", ResetAll),
+                new MenuItem("Time: " + HourLabel(hourIndex), CreateTimePage),
+                new MenuItem("Rain: " + (rain ? "ON" : "OFF"), ToggleRain),
+                new MenuItem("Reset everything", ResetAll),
             });
         }
 
@@ -46,13 +46,13 @@ namespace ArgonWeather
         {
             var items = new System.Collections.Generic.List<MenuItem>
             {
-                TimeItem("Normal (jeu)", -1),
+                TimeItem("Normal (game)", -1),
             };
             for (int i = 0; i < PresetIndex.Length; i++)
                 items.Add(TimeItem(PresetName[i], PresetIndex[i]));
-            items.Add(new MenuItem("- 1 heure", () => Shift(-1)));
-            items.Add(new MenuItem("+ 1 heure", () => Shift(1)));
-            return new MenuPage("Heure du jour", items);
+            items.Add(new MenuItem("- 1 hour", () => Shift(-1)));
+            items.Add(new MenuItem("+ 1 hour", () => Shift(1)));
+            return new MenuPage("Time of day", items);
         }
 
         private MenuItem TimeItem(string label, int index) =>
@@ -63,10 +63,10 @@ namespace ArgonWeather
 
         private string HourLabel(int index)
         {
-            if (index < 0) return "Normal (jeu)";
+            if (index < 0) return "Normal (game)";
             for (int i = 0; i < PresetIndex.Length; i++)
                 if (PresetIndex[i] == index) return PresetName[i] + HourSuffix(index);
-            return "Personnalise" + HourSuffix(index);
+            return "Custom" + HourSuffix(index);
         }
 
         private static string HourSuffix(int index)
@@ -84,7 +84,7 @@ namespace ArgonWeather
             int i = ((index % range.Length) + range.Length) % range.Length;
             double hours = 0;
             for (int k = 0; k < i; k++) hours += range[k];
-            return ((int)hours).ToString("00") + "h";
+            return ((int)hours).ToString("00") + ":00";
         }
 
         private void SetHour(int index)
@@ -129,7 +129,7 @@ namespace ArgonWeather
         private void Pin(BetterDayNightManager manager)
         {
             int index = hourIndex;
-            // Epingle l'heure en permanence (survit aux resyncs serveur), puis saute a l'heure choisie.
+            // Pins the time permanently (survives server resyncs), then jumps to the chosen hour.
             manager.SetTimeIndexOverrideFunction(current => index);
             manager.SetTimeOfDay(index, true);
             pinned = manager;
