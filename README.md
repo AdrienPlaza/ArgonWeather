@@ -22,7 +22,7 @@
 
 ArgonWeather adds a **Customisation** page to the [Argon](https://github.com/niko-tar-gz/Argon) in-game menu. Everything is done with your VR controllers, or with the keyboard on PC (T to open).
 
-The page only works in **modded lobbies** or **private rooms** (code-only rooms). In a normal public lobby it shows *Locked: modded or private rooms only* and changes nothing. Leaving unlocks nothing: the mod gives the time and the weather back to the game.
+The mod works in **modded lobbies**, in **private rooms** (code-only rooms) and **offline / single player**. In a normal public lobby it fully disables itself: **B and T do nothing**, the menu never opens, and the time and weather are given back to the game. Leaving a modded gamemode sends you back to single player instead of a public room (the same safety measure WalkSimulator uses).
 
 | Option | Choices |
 |---|---|
@@ -51,10 +51,10 @@ The navigation input can be changed in the menu under **Settings > Menu Nav** (r
 ## Install
 
 1. Install **[BepInEx](https://github.com/BepInEx/BepInEx/releases) 5.x** in Gorilla Tag.
-2. Install **[Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/)** (required, it locks the mod to modded lobbies).
+2. Install **[Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/)** (required, it tells the mod which kind of lobby you are in).
 3. Download `ArgonWeather.dll` from the [Releases](../../releases) page.
 4. Drop it into `Gorilla Tag/BepInEx/plugins/`.
-5. Launch the game, press **B**, and open **Customisation** in a modded lobby or a private room.
+5. Launch the game, press **B**, and open **Customisation** in a modded lobby or a private room (it also works offline).
 
 The mod is a single, self-contained DLL: it does not require the original Argon plugin.
 
@@ -89,7 +89,7 @@ The time and the rain go through the game's own `BetterDayNightManager`:
 - A time preset calls `SetTimeOfDay(index)` and pins it with `SetTimeIndexOverrideFunction(...)`, which is why it survives server updates. *Normal* calls `UnsetTimeIndexOverrideFunction()` and `ClearTimeOfDay(true)`.
 - The pin is re-applied when the menu opens if the game reset it (map change), so it never silently stops working.
 - Rain uses `SetFixedWeather(WeatherType.Raining, true)` and `ClearFixedWeather(true)`.
-- [Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/) tells the mod when you enter or leave a modded lobby (`ModdedGamemodeJoin` / `ModdedGamemodeLeave`). Outside, the mod stays locked and never touches the game's time or weather.
+- [Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/) tells the mod when you join or leave a room (`RoomJoined` / `RoomLeft`, with the gamemode and the private flag). The mod is enabled by default and turns itself off in public lobbies; leaving a modded gamemode calls `ReturnToSinglePlayer()`.
 
 ## Known issues
 

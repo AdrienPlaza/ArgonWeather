@@ -18,7 +18,12 @@ namespace Argon
         public void OnModdedJoin(string gamemode) => ArgonWeather.WeatherMenu.SetModded(true);
 
         [ModdedGamemodeLeave]
-        public void OnModdedLeave(string gamemode) => ArgonWeather.WeatherMenu.SetModded(false);
+        public void OnModdedLeave(string gamemode)
+        {
+            // WalkSimulator-style guard: never drop back into a public lobby with the mod active.
+            if (NetworkSystem.Instance != null) NetworkSystem.Instance.ReturnToSinglePlayer();
+            ArgonWeather.WeatherMenu.SetModded(false);
+        }
 
         private void OnDestroy() => MenuApi.Reset();
     }
@@ -27,6 +32,6 @@ namespace Argon
     {
         public const string GUID = "majorol.argon.weather";
         public const string Name = "ArgonWeather";
-        public const string Version = "1.2.0";
+        public const string Version = "1.3.0";
     }
 }

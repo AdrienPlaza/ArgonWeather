@@ -19,8 +19,10 @@ namespace ArgonWeather
 
         internal static bool IsAllowed => allowed;
 
-        // Locked by default. Unlocked in a modded lobby or a private room.
-        private static bool allowed;
+        // WalkSimulator-style gate: enabled everywhere by default (including offline / single player)
+        // and fully disabled inside a public lobby. Unlocked in modded lobbies and private rooms.
+        private static bool allowed = true;
+        private static bool inRoom;
         private static bool inModdedLobby;
         private static bool inPrivateRoom;
 
@@ -35,36 +37,56 @@ namespace ArgonWeather
         internal static void SetModded(bool value)
         {
             inModdedLobby = value;
-            if (Instance != null) Instance.Recompute();
-            else allowed = inModdedLobby || inPrivateRoom;
+            Recompute();
+        }
+
+        private static void OnRoomJoined(object sender, Utilla.Events.RoomJoinedArgs args)
+        {
+            inRoom = true;
+            inPrivateRoom = args != null && args.isPrivate;
+            string gamemode = args != null ? args.Gamemode : null;
+            inModdedLobby = gamemode != null && gamemode.ToUpper().Contains("MODDED");
+            Recompute();
+        }
+
+        private static void OnRoomLeft(object sender, Utilla.Events.RoomJoinedArgs args)
+        {
+            inRoom = false;
+            inPrivateRoom = false;
+            inModdedLobby = false;
+            Recompute();
         }
 
         private void Update()
         {
-            // Private room: checked once per second, cheap enough.
+            // Safety net for missed room events (map changes, reconnect...). Once per second is enough.
             if (Time.time < nextRoomCheck) return;
             nextRoomCheck = Time.time + 1f;
+            bool room;
             bool isPrivate;
             try
             {
                 var network = NetworkSystem.Instance;
-                isPrivate = network != null && network.InRoom && network.SessionIsPrivate;
+                room = network != null && network.InRoom;
+                isPrivate = room && network.SessionIsPrivate;
             }
             catch (Exception)
             {
+                room = false;
                 isPrivate = false;
             }
-            if (isPrivate == inPrivateRoom) return;
+            if (room == inRoom && isPrivate == inPrivateRoom) return;
+            inRoom = room;
             inPrivateRoom = isPrivate;
             Recompute();
         }
 
-        private void Recompute()
+        private static void Recompute()
         {
-            bool value = inModdedLobby || inPrivateRoom;
+            bool value = !inRoom || inPrivateRoom || inModdedLobby;
             if (value == allowed) return;
             allowed = value;
-            OnAllowedChanged();
+            if (Instance != null) Instance.OnAllowedChanged();
         }
 
         internal void Initialize(ConfigFile config)
@@ -74,6 +96,8 @@ namespace ArgonWeather
             hourIndex = hourConfig.Value < -1 ? -1 : hourConfig.Value;
             rain = rainConfig.Value;
             MenuApi.RegisterRootItem(RootLabel, CreateRootPage);
+            Utilla.Events.RoomJoined += OnRoomJoined;
+            Utilla.Events.RoomLeft += OnRoomLeft;
         }
 
         private void Awake()
@@ -84,6 +108,8 @@ namespace ArgonWeather
 
         private void OnDestroy()
         {
+            Utilla.Events.RoomJoined -= OnRoomJoined;
+            Utilla.Events.RoomLeft -= OnRoomLeft;
             if (Instance == this) Instance = null;
         }
 
