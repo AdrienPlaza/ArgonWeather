@@ -8,7 +8,7 @@ namespace Argon
         public void Awake()
         {
             gameObject.AddComponent<ArgonMenu>().Initialize(Config);
-            gameObject.AddComponent<ArgonWeather.WeatherMenu>();
+            gameObject.AddComponent<ArgonWeather.WeatherMenu>().Initialize(Config);
         }
 
         private void OnDestroy() => MenuApi.Reset();
@@ -18,6 +18,6 @@ namespace Argon
     {
         public const string GUID = "majorol.argon.weather";
         public const string Name = "ArgonWeather";
-        public const string Version = "1.0.0";
+        public const string Version = "1.1.0";
     }
 }

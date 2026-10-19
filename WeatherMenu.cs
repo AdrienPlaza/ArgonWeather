@@ -1,61 +1,108 @@
 using System;
 using Argon;
+using BepInEx.Configuration;
 using UnityEngine;
 
 namespace ArgonWeather
 {
-    internal enum TimeChoice { Game, Morning, TenAM, Day, Evening, Night }
-
     /// <summary>Page "Customisation" du menu Argon : heure epinglee + pluie (API native du jeu).</summary>
     internal sealed class WeatherMenu : MonoBehaviour
     {
         internal const string RootLabel = "Customisation";
 
-        // Index exacts utilises par Time Changer (Gorilla.Time V2.1).
-        private static readonly int[] TimeIndex = { -1, 1, 3, 4, 6, 0 };
+        // Index des presets, identiques a ceux de Time Changer (Gorilla.Time V2.1).
+        private static readonly int[] PresetIndex = { 1, 3, 4, 6, 0 };
+        private static readonly string[] PresetName = { "Matin", "10h", "Jour", "Soir", "Nuit" };
 
-        private TimeChoice time = TimeChoice.Game;
+        private ConfigEntry<int> hourConfig;
+        private ConfigEntry<bool> rainConfig;
+        private int hourIndex = -1;
         private bool rain;
+        private BetterDayNightManager pinned;
 
-        private void Awake()
+        internal void Initialize(ConfigFile config)
         {
-            DontDestroyOnLoad(gameObject);
+            hourConfig = config.Bind("Weather", "HourIndex", -1, "Pinned time of day index (-1 = normal game time).");
+            rainConfig = config.Bind("Weather", "Rain", false, "Rain on/off.");
+            hourIndex = hourConfig.Value < -1 ? -1 : hourConfig.Value;
+            rain = rainConfig.Value;
             MenuApi.RegisterRootItem(RootLabel, CreateRootPage);
         }
 
-        private MenuPage CreateRootPage() => new MenuPage(RootLabel, new[]
-        {
-            new MenuItem("Heure : " + TimeLabel(time), CreateTimePage),
-            new MenuItem("Pluie : " + (rain ? "ON" : "OFF"), ToggleRain),
-        });
+        private void Awake() => DontDestroyOnLoad(gameObject);
 
-        private MenuPage CreateTimePage() => new MenuPage("Heure du jour", new[]
+        private MenuPage CreateRootPage()
         {
-            TimeItem("Normal (jeu)", TimeChoice.Game),
-            TimeItem("Matin", TimeChoice.Morning),
-            TimeItem("10h", TimeChoice.TenAM),
-            TimeItem("Jour", TimeChoice.Day),
-            TimeItem("Soir", TimeChoice.Evening),
-            TimeItem("Nuit", TimeChoice.Night),
-        });
+            Reapply();
+            return new MenuPage(RootLabel, new[]
+            {
+                new MenuItem("Heure : " + HourLabel(hourIndex), CreateTimePage),
+                new MenuItem("Pluie : " + (rain ? "ON" : "OFF"), ToggleRain),
+                new MenuItem("Tout remettre normal", ResetAll),
+            });
+        }
 
-        private MenuItem TimeItem(string label, TimeChoice choice) =>
-            new MenuItem(Mark(label, time == choice), () => { time = choice; ApplyTime(); });
+        private MenuPage CreateTimePage()
+        {
+            var items = new System.Collections.Generic.List<MenuItem>
+            {
+                TimeItem("Normal (jeu)", -1),
+            };
+            for (int i = 0; i < PresetIndex.Length; i++)
+                items.Add(TimeItem(PresetName[i], PresetIndex[i]));
+            items.Add(new MenuItem("- 1 heure", () => Shift(-1)));
+            items.Add(new MenuItem("+ 1 heure", () => Shift(1)));
+            return new MenuPage("Heure du jour", items);
+        }
+
+        private MenuItem TimeItem(string label, int index) =>
+            new MenuItem(Mark(label + HourSuffix(index), hourIndex == index), () => SetHour(index));
 
         private static string Mark(string label, bool selected) =>
             selected ? "<color=#ffc600>" + label + "</color>" : label;
 
-        private static string TimeLabel(TimeChoice t)
+        private string HourLabel(int index)
         {
-            switch (t)
-            {
-                case TimeChoice.Game: return "Normal (jeu)";
-                case TimeChoice.Morning: return "Matin";
-                case TimeChoice.TenAM: return "10h";
-                case TimeChoice.Day: return "Jour";
-                case TimeChoice.Evening: return "Soir";
-                default: return "Nuit";
-            }
+            if (index < 0) return "Normal (jeu)";
+            for (int i = 0; i < PresetIndex.Length; i++)
+                if (PresetIndex[i] == index) return PresetName[i] + HourSuffix(index);
+            return "Personnalise" + HourSuffix(index);
+        }
+
+        private static string HourSuffix(int index)
+        {
+            var manager = BetterDayNightManager.instance;
+            if (manager == null) return "";
+            string hour = HourText(manager, index);
+            return hour == null ? "" : " (" + hour + ")";
+        }
+
+        private static string HourText(BetterDayNightManager manager, int index)
+        {
+            double[] range = manager.timeOfDayRange;
+            if (range == null || range.Length == 0) return null;
+            int i = ((index % range.Length) + range.Length) % range.Length;
+            double hours = 0;
+            for (int k = 0; k < i; k++) hours += range[k];
+            return ((int)hours).ToString("00") + "h";
+        }
+
+        private void SetHour(int index)
+        {
+            hourIndex = index;
+            hourConfig.Value = index;
+            ApplyTime();
+        }
+
+        private void Shift(int delta)
+        {
+            var manager = BetterDayNightManager.instance;
+            if (manager == null) return;
+            double[] range = manager.timeOfDayRange;
+            if (range == null || range.Length == 0) return;
+            int count = range.Length;
+            int start = hourIndex >= 0 ? hourIndex : manager.currentTimeIndex;
+            SetHour(((start + delta) % count + count) % count);
         }
 
         private void ApplyTime()
@@ -64,16 +111,40 @@ namespace ArgonWeather
             {
                 var manager = BetterDayNightManager.instance;
                 if (manager == null) return;
-                if (time == TimeChoice.Game)
+                if (hourIndex < 0)
                 {
                     manager.UnsetTimeIndexOverrideFunction();
                     manager.ClearTimeOfDay(true);
+                    pinned = null;
                     return;
                 }
-                int index = TimeIndex[(int)time];
-                // Epingle l'heure en permanence (survit aux resyncs serveur), puis saute a l'heure choisie.
-                manager.SetTimeIndexOverrideFunction(current => index);
-                manager.SetTimeOfDay(index, true);
+                Pin(manager);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, this);
+            }
+        }
+
+        private void Pin(BetterDayNightManager manager)
+        {
+            int index = hourIndex;
+            // Epingle l'heure en permanence (survit aux resyncs serveur), puis saute a l'heure choisie.
+            manager.SetTimeIndexOverrideFunction(current => index);
+            manager.SetTimeOfDay(index, true);
+            pinned = manager;
+        }
+
+        private void Reapply()
+        {
+            try
+            {
+                var manager = BetterDayNightManager.instance;
+                if (manager == null) return;
+                if (hourIndex >= 0 && (manager != pinned || manager.currentSetting != TimeSettings.Static || manager.currentTimeIndex != hourIndex))
+                    Pin(manager);
+                if (rain && manager.CurrentWeather() != BetterDayNightManager.WeatherType.Raining)
+                    manager.SetFixedWeather(BetterDayNightManager.WeatherType.Raining, true);
             }
             catch (Exception e)
             {
@@ -84,12 +155,39 @@ namespace ArgonWeather
         private void ToggleRain()
         {
             rain = !rain;
+            rainConfig.Value = rain;
+            ApplyRain();
+        }
+
+        private void ApplyRain()
+        {
             try
             {
                 var manager = BetterDayNightManager.instance;
                 if (manager == null) return;
                 if (rain) manager.SetFixedWeather(BetterDayNightManager.WeatherType.Raining, true);
                 else manager.ClearFixedWeather(true);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, this);
+            }
+        }
+
+        private void ResetAll()
+        {
+            hourIndex = -1;
+            rain = false;
+            hourConfig.Value = -1;
+            rainConfig.Value = false;
+            try
+            {
+                var manager = BetterDayNightManager.instance;
+                if (manager == null) return;
+                manager.UnsetTimeIndexOverrideFunction();
+                manager.ClearTimeOfDay(true);
+                manager.ClearFixedWeather(true);
+                pinned = null;
             }
             catch (Exception e)
             {

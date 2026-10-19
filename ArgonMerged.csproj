@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	  <TargetFramework>netstandard2.1</TargetFramework>
-	  <AssemblyName>ArgonWeather-1.0</AssemblyName>
+	  <AssemblyName>ArgonWeather</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

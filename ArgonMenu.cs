@@ -5,6 +5,7 @@ using BepInEx.Configuration;
 using GorillaNetworking;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
 
@@ -45,15 +46,24 @@ namespace Argon
         private void Update()
         {
             ControllerInputPoller poller = ControllerInputPoller.instance;
-            if (poller == null) return;
+            Keyboard keyboard = Keyboard.current;
+            if (poller == null && keyboard == null) return;
             try
             {
-                bool openPressed = poller.rightControllerSecondaryButton;
-                if (openPressed && !previousOpen) Toggle();
-                previousOpen = openPressed;
+                bool openPressed = poller != null && poller.rightControllerSecondaryButton;
+                bool togglePressed = openPressed || (keyboard != null && keyboard.tKey.wasPressedThisFrame);
+                if (togglePressed && !previousOpen) Toggle();
+                previousOpen = togglePressed;
                 if (menuObject == null || !menuObject.activeSelf) return;
 
                 FollowHead();
+                if (keyboard != null)
+                {
+                    if (keyboard.upArrowKey.wasPressedThisFrame) Move(-1);
+                    if (keyboard.downArrowKey.wasPressedThisFrame) Move(1);
+                    if (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame) Enter();
+                }
+                if (poller == null) return;
                 bool primary = poller.rightControllerPrimaryButton;
                 GetNavigation(poller, out bool up, out bool down);
                 if (up && !previousUp) Move(-1);
