@@ -22,7 +22,7 @@
 
 ArgonWeather adds a **Customisation** page to the [Argon](https://github.com/niko-tar-gz/Argon) in-game menu. Everything is done with your VR controllers, or with the keyboard on PC (T to open).
 
-The page only works in **modded lobbies** (it needs [Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/)). In a normal public lobby it shows *Locked: modded lobbies only* and changes nothing. Leaving a modded lobby gives the time and the weather back to the game.
+The page only works in **modded lobbies** or **private rooms** (code-only rooms). In a normal public lobby it shows *Locked: modded or private rooms only* and changes nothing. Leaving unlocks nothing: the mod gives the time and the weather back to the game.
 
 | Option | Choices |
 |---|---|
@@ -54,7 +54,7 @@ The navigation input can be changed in the menu under **Settings > Menu Nav** (r
 2. Install **[Utilla](https://thunderstore.io/c/gorilla-tag/p/legoandmars/Utilla/)** (required, it locks the mod to modded lobbies).
 3. Download `ArgonWeather.dll` from the [Releases](../../releases) page.
 4. Drop it into `Gorilla Tag/BepInEx/plugins/`.
-5. Launch the game, press **B**, and open **Customisation** in a modded lobby.
+5. Launch the game, press **B**, and open **Customisation** in a modded lobby or a private room.
 
 The mod is a single, self-contained DLL: it does not require the original Argon plugin.
 
